@@ -15,11 +15,21 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 100)
+	// `nullable = false` makes name required
+	@Column(nullable = false)
 	private String name;
 
-	@Column(nullable = false, unique = true, length = 150)
+	// Email is required, must be unique
+	@Column(nullable = false, unique = true)
 	private String email;
+
+	// Password is required so the account can be authenticated later.
+	@Column(nullable = false)
+	private String password;
+
+	// Store whether the account has completed email verification.
+	@Column(nullable = false)
+	private boolean isVerified = false;
 
 	protected User() {
 	}
@@ -27,6 +37,7 @@ public class User {
 	public User(String name, String email) {
 		this.name = name;
 		this.email = email;
+		this.isVerified = false;
 	}
 
 	public Long getId() {
@@ -47,5 +58,21 @@ public class User {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public boolean isVerified() {
+		return isVerified;
+	}
+
+	public void setVerified(boolean verified) {
+		isVerified = verified;
 	}
 }
