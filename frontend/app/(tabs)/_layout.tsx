@@ -11,11 +11,30 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="login"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
+      {/* Auth screens — hidden from tab bar */}
+      <Tabs.Screen
+        name="login"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="signup"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+
+      {/* App tabs */}
       <Tabs.Screen
         name="index"
         options={{
