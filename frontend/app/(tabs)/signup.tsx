@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   TextInput,
@@ -11,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Link, router } from 'expo-router';
+import { registerUser } from '@/lib/auth';
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState('');
@@ -20,6 +22,8 @@ export default function SignUpScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (value: string) => {
     if (value && !value.toLowerCase().endsWith('.edu')) {
@@ -29,13 +33,52 @@ export default function SignUpScreen() {
     }
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
+    setFormError('');
+
+    // Do quick client-side checks before sending anything to the backend.
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      setFormError('Please fill in every field.');
+      return;
+    }
+
     if (!email.toLowerCase().endsWith('.edu')) {
       setEmailError('Please sign up with your school email');
       return;
     }
-    // TODO: wire up registration
-    console.log('Sign up:', fullName, email, password);
+
+    if (password.length < 8) {
+      setFormError('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await registerUser({
+        name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      // After signup, send the user back to verification screen
+      router.push({
+        pathname: '/verify',
+        params: {
+          email: email.trim().toLowerCase(),
+          message: response.token,
+        },
+      });
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Unable to create account right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -155,8 +198,14 @@ export default function SignUpScreen() {
 
           {/* Sign up button */}
           <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
-            <Text style={styles.primaryButtonText}>Create Account</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color={WHITE} />
+            ) : (
+              <Text style={styles.primaryButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
+
+          {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
 
           {/* Divider */}
           <View style={styles.divider}>
