@@ -1,12 +1,10 @@
 package backend.auth;
 
-import org.springframework.stereotype.Service;
-
 import backend.auth.dto.AuthResponse;
-import backend.auth.dto.LoginRequest;
 import backend.auth.dto.RegisterRequest;
 import backend.user.User;
 import backend.user.UserRepository;
+import org.springframework.stereotype.Service;
 
 // This service will handle the authentication logic, such as registering users, logging in, and managing sessions.
 @Service
@@ -56,28 +54,4 @@ public class AuthService {
 		userRepository.save(user);
 		return true;
 	}
-	public AuthResponse login(LoginRequest request) {
-
-    // 1. Find user by email
-    User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-    // 2. Check if user is verified (optional but recommended)
-    if (!user.isVerified()) {
-        throw new RuntimeException("Email not verified");
-    }
-
-    // 3. Check password
-    if (!user.getPassword().equals(request.password())) {
-        throw new RuntimeException("Invalid password");
-    }
-
-    // 4. Generate JWT token
-	String token = jwtService.generateToken(user);
-	
-    // 5. Return token
-    return new AuthResponse(token);
 }
-}
-
-

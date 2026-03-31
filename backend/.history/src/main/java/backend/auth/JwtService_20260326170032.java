@@ -1,7 +1,6 @@
 package backend.auth;
-import org.springframework.stereotype.Service;
 
-import backend.user.User;
+import org.springframework.stereotype.Service;
 
 // This service will handle the creation and validation of JWT tokens so users can stay logged in.
 @Service
@@ -12,7 +11,4 @@ public class JwtService {
         //to decode the token and extract the email
         return "        ";
     }
-    public String generateToken(User user) {
-    return user.getEmail(); // simple token for now
-}
 }

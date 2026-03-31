@@ -1,7 +1,6 @@
 package backend.auth;
 
 import backend.auth.dto.AuthResponse;
-import backend.auth.dto.LoginRequest;
 import backend.auth.dto.RegisterRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,8 +37,4 @@ public class AuthController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired code");
 		}	
 	}
-	@PostMapping("/login")
-	public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-    return ResponseEntity.ok(authService.login(request));
-}
 }
