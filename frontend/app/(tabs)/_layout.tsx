@@ -33,6 +33,13 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+      <Tabs.Screen
+        name="verify"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
 
       {/* App tabs */}
       <Tabs.Screen
