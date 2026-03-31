@@ -71,7 +71,7 @@ export default function SignUpScreen() {
         pathname: '/verify',
         params: {
           email: email.trim().toLowerCase(),
-          message: response.token,
+          message: response.message,
         },
       });
     } catch (error) {

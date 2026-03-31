@@ -1,6 +1,7 @@
 package backend.auth;
 
 import backend.auth.dto.AuthResponse;
+import backend.auth.dto.RegisterationResponse;
 import backend.auth.dto.LoginRequest;
 import backend.auth.dto.RegisterRequest;
 import org.springframework.http.HttpStatus;
@@ -24,23 +25,18 @@ public class AuthController {
 
 	//Registration
 	@PostMapping("/register")
-	public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-		AuthResponse response = authService.register(request);
-		return ResponseEntity.ok(response);
+	public ResponseEntity<RegisterationResponse> register(@RequestBody RegisterRequest request) {
+		return ResponseEntity.ok(authService.register(request));
 	}
 
 
 	@PostMapping("/verify")
-	public ResponseEntity<String> verifyEmail(@RequestParam String email, @RequestParam String code) {
-		 boolean isVerified = authService.verifyCodeRecieved(email, code);
-		 if (isVerified) {
-			return ResponseEntity.ok("Email verified successfully!");
-		} else {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The verification code you entered is incorrect.");
-		}	
+	public ResponseEntity<AuthResponse> verifyEmail(@RequestParam String email, @RequestParam String code) {
+		return ResponseEntity.ok(authService.verifyAndLogin(email, code));
+
 	}
 	@PostMapping("/login")
 	public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-    return ResponseEntity.ok(authService.login(request));
-}
+    	return ResponseEntity.ok(authService.login(request));
+	}
 }

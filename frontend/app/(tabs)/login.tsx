@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   TextInput,
@@ -10,13 +11,16 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { loginUser, persistAuthToken } from '@/lib/auth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (value: string) => {
     if (value && !value.toLowerCase().endsWith('.edu')) {
@@ -26,13 +30,30 @@ export default function LoginScreen() {
     }
   };
 
-  const handleLogin = () => {
-    if (!email.toLowerCase().endsWith('.edu')) {
-      setEmailError('Please sign up with your school email');
+  const handleLogin = async () => {
+    setFormError('');
+
+    if (!email.trim() || !password) {
+      setFormError('Please enter your email and password.');
       return;
     }
-    // TODO: wire up authentication
-    console.log('Login:', email, password);
+    setEmailError('');
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await loginUser({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      await persistAuthToken(response.token);
+
+      router.replace('/');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Unable to sign in right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,9 +130,15 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           {/* Login button */}
-          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-            <Text style={styles.primaryButtonText}>Sign In</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <ActivityIndicator color={WHITE} />
+            ) : (
+              <Text style={styles.primaryButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
+
+          {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
 
           {/* Divider */}
           <View style={styles.divider}>

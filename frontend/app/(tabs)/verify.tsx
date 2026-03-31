@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
-import { verifyEmail } from '@/lib/auth';
+import { persistAuthToken, verifyEmail } from '@/lib/auth';
 
 export default function VerifyScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
@@ -54,8 +54,9 @@ export default function VerifyScreen() {
         code: code.trim(),
       });
 
-      setSuccessMessage(response.message);
-      router.replace('/login');
+      await persistAuthToken(response.token);
+      setSuccessMessage('Email verified successfully.');
+      router.replace('/');
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Unable to verify code right now.');
     } finally {
