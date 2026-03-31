@@ -7,9 +7,6 @@ import backend.auth.dto.LoginRequest;
 import backend.auth.dto.RegisterRequest;
 import backend.user.User;
 import backend.user.UserRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 // This service will handle the authentication logic, such as registering users, logging in, and managing sessions.
 @Service
@@ -29,36 +26,27 @@ public class AuthService {
 
 	    // 1. check email not already taken
 	    if (userRepository.existsByEmail(request.email())) {
-	        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+	        throw new RuntimeException("Email already in use");
 	    }
 		//2. check if its a slu email
 		verificationService.validateSchoolEmail(request.email());
 
 	    // 3. build the user entity
-		User user = createUser(request);
+	    User user = new User(request.name(), request.email());
+	    user.setPassword(request.password()); // implement password hashing for this;
+		userRepository.save(user);
 
         // 4. generate code and send verification email
-		sendVerification(request.email());
+        String code = verificationService.generateCode();
+    	verificationService.sendVerificationCode(user.getEmail(), code);
 
 		return new AuthResponse("User registered successfully. Please check your email for verification instructions.");
-	}
-
-	private User createUser(RegisterRequest request) {
-		User user = new User(request.name(), request.email());
-		user.setPassword(request.password()); // add hashing here in the future
-		return userRepository.save(user);
-	}
-
-	private void sendVerification(String email) {
-		String code = verificationService.generateCode();
-		verificationService.storeCode(email, code);
-		verificationService.sendVerificationCode(email, code);
 	}
 
 	
 
 
-	public boolean verifyCodeRecieved(String email, String code) {
+	public boolean verifyCode(String email, String code) {
 		if (!verificationService.verifyCode(email, code)) {
 			return false;
 		}

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -32,11 +31,11 @@ public class AuthController {
 
 	@PostMapping("/verify")
 	public ResponseEntity<String> verifyEmail(@RequestParam String email, @RequestParam String code) {
-		 boolean isVerified = authService.verifyCodeRecieved(email, code);
+		 boolean isVerified = authService.verifyCode(email, code);
 		 if (isVerified) {
 			return ResponseEntity.ok("Email verified successfully!");
 		} else {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The verification code you entered is incorrect.");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired code");
 		}	
 	}
 	@PostMapping("/login")
