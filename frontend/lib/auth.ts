@@ -24,6 +24,43 @@ export type RegistrationResponse = {
   message: string;
 };
 
+export type UserProfile = {
+  name: string;
+  email: string;
+};
+
+export type ServiceListing = {
+  id: number;
+  ownerId: number;
+  serviceTitle: string;
+  category: string;
+  description: string;
+  price: string;
+  priceType: string;
+  availability: string;
+  serviceArea: string;
+  imageUrls: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ListingImageUpload = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
+export type CreateServiceListingRequest = {
+  serviceTitle: string;
+  category: string;
+  description: string;
+  price: string;
+  priceType: string;
+  availability: string;
+  serviceArea: string;
+  images?: ListingImageUpload[];
+};
+
 const API_BASE_URL = 'http://localhost:8080';
 const AUTH_TOKEN_STORAGE_KEY = 'campuskonnect-auth-token';
 
@@ -69,6 +106,21 @@ async function postJson<TResponse>(path: string, body: unknown, fallbackError: s
   }
 }
 
+async function getJson<TResponse>(path: string, fallbackError: string): Promise<TResponse> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}${path}`);
+    return response.data as TResponse;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.error || fallbackError;
+      throw new Error(errorMessage);
+    }
+
+    throw new Error(fallbackError);
+  }
+}
+
 // Keep auth requests in one place so screens can stay focused on UI and validation.
 export async function registerUser(body: RegisterRequest): Promise<RegistrationResponse> {
   return postJson<RegistrationResponse>('/auth/register', body, 'Registration failed.');
@@ -92,6 +144,10 @@ export async function clearAuthToken(): Promise<void> {
   storage?.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
+export async function getCurrentUser(): Promise<UserProfile> {
+  return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
+}
+
 export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthResponse> {
   const params = new URLSearchParams({
     email: body.email.trim().toLowerCase(),
@@ -111,4 +167,54 @@ export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthRespons
 
     throw new Error('Verification failed.');
   }
+}
+
+export async function createServiceListing(
+  body: CreateServiceListingRequest
+): Promise<ServiceListing> {
+  const formData = new FormData();
+  formData.append(
+    'listing',
+    JSON.stringify({
+      serviceTitle: body.serviceTitle,
+      category: body.category,
+      description: body.description,
+      price: body.price,
+      priceType: body.priceType,
+      availability: body.availability,
+      serviceArea: body.serviceArea,
+    })
+  );
+
+  (body.images ?? []).forEach((image, index) => {
+    formData.append('images', {
+      uri: image.uri,
+      name: image.name || `listing-image-${index + 1}.jpg`,
+      type: image.type || 'image/jpeg',
+    } as any);
+  });
+
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/listings`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data as ServiceListing;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.error || 'Unable to create listing.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to create listing.');
+  }
+}
+
+export async function getAllServiceListings(): Promise<ServiceListing[]> {
+  return getJson<ServiceListing[]>('/api/listings', 'Unable to load listings.');
+}
+
+export async function getMyServiceListings(): Promise<ServiceListing[]> {
+  return getJson<ServiceListing[]>('/api/listings/mine', 'Unable to load your listings.');
 }

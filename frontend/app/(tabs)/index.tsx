@@ -1,98 +1,161 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { getAllServiceListings, ServiceListing } from '@/lib/auth';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [listings, setListings] = useState<ServiceListing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const loadListings = useCallback(async (refresh = false) => {
+    try {
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setErrorMessage('');
+
+      const response = await getAllServiceListings();
+      setListings(response);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to load listings.');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadListings();
+  }, [loadListings]);
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={() => loadListings(true)} />
+      }
+    >
+      <Text style={styles.title}>Listings Around You</Text>
+      <Text style={styles.subtitle}>
+        Browse available student services near campus. Use the Create tab to publish your own listing.
+      </Text>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Nearby Listings</Text>
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+        {isLoading ? (
+          <ActivityIndicator color="#0288D1" />
+        ) : listings.length === 0 ? (
+          <Text style={styles.emptyText}>No listings found yet.</Text>
+        ) : (
+          listings.map((listing) => (
+            <View style={styles.listingCard} key={listing.id}>
+              {listing.imageUrls?.length ? (
+                <Image
+                  source={{ uri: `http://localhost:8080${listing.imageUrls[0]}` }}
+                  style={styles.listingImage}
+                />
+              ) : null}
+              <Text style={styles.listingTitle}>{listing.serviceTitle}</Text>
+              <Text style={styles.listingMeta}>
+                {listing.category} • ${listing.price}/{listing.priceType}
+              </Text>
+              <Text style={styles.listingLabel}>Description</Text>
+              <Text style={styles.listingValue}>{listing.description}</Text>
+              <Text style={styles.listingLabel}>Service Area</Text>
+              <Text style={styles.listingValue}>{listing.serviceArea}</Text>
+              <Text style={styles.listingLabel}>Availability</Text>
+              <Text style={styles.listingValue}>{listing.availability}</Text>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    padding: 20,
+    backgroundColor: '#F6FBFF',
+    paddingBottom: 40,
+    gap: 14,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#0D0D0D',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    fontSize: 14,
+    color: '#546E7A',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#D6EAF8',
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0D0D0D',
+  },
+  listingCard: {
+    borderWidth: 1,
+    borderColor: '#E3F2FD',
+    borderRadius: 10,
+    padding: 10,
+    gap: 4,
+    backgroundColor: '#FAFDFF',
+  },
+  listingImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 10,
+    marginBottom: 6,
+    backgroundColor: '#E5E7EB',
+  },
+  listingTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0D0D0D',
+  },
+  listingMeta: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563EB',
+    marginBottom: 4,
+  },
+  listingLabel: {
+    fontSize: 12,
+    color: '#607D8B',
+    fontWeight: '600',
+  },
+  listingValue: {
+    fontSize: 14,
+    color: '#102027',
+    marginBottom: 4,
+  },
+  emptyText: {
+    color: '#607D8B',
+  },
+  errorText: {
+    color: '#B71C1C',
+    fontWeight: '600',
   },
 });
