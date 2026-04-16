@@ -1,12 +1,12 @@
 package backend.user;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import backend.user.dto.UserProfileResponse;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,5 +18,9 @@ public class UserController {
 		this.userService = userService;
 	}
 
-	// handle users looking at their profile, updating or deleting their account, etc.
+	@GetMapping("/me")
+	public ResponseEntity<UserProfileResponse> currentUser(Authentication authentication) {
+		User user = userService.requireByEmail(authentication.getName());
+		return ResponseEntity.ok(new UserProfileResponse(user.getName(), user.getEmail()));
+	}
 }

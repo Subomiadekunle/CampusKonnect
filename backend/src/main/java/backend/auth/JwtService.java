@@ -1,7 +1,6 @@
 package backend.auth;
 
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,7 @@ import javax.crypto.SecretKey;
 @Service
 public class JwtService {
 
-	private final SecretKey signingKey;;
+	private final SecretKey signingKey;
 	private final long expirationMs;
 
 	public JwtService(

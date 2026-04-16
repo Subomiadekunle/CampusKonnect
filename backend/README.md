@@ -23,10 +23,27 @@ DB_PASSWORD=campuskonnect
 
 If your PostgreSQL uses a different port, username, or password, just change those values.
 
+## Database profile switch (local vs remote)
+
+The backend now supports Spring profiles:
+
+- `remote` (default): shared Supabase DB
+- `local`: your laptop PostgreSQL DB
+
+Set `APP_PROFILE` before running:
+
+```bash
+# Use your local Postgres
+APP_PROFILE=local mvn spring-boot:run
+
+# Use shared remote DB (default)
+APP_PROFILE=remote mvn spring-boot:run
+```
+
 ## Run the backend
 
 ```bash
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 Spring Boot will read the `.env` file and connect to PostgreSQL. Hibernate will create or update the `campus_users` table automatically.

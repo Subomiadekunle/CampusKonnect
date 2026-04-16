@@ -1,7 +1,5 @@
 package backend.auth;
 
-import org.springframework.stereotype.Service;
-
 import backend.auth.dto.RegisterationResponse;
 import backend.auth.dto.AuthResponse;
 import backend.auth.dto.LoginRequest;
@@ -9,6 +7,7 @@ import backend.auth.dto.RegisterRequest;
 import backend.user.User;
 import backend.user.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -77,26 +76,17 @@ public class AuthService {
 		return new AuthResponse(token);
 	}
 	public AuthResponse login(LoginRequest request) {
-
-		// 1. Find user by email
 		User user = userRepository.findByEmail(request.email())
-				.orElseThrow(() -> new RuntimeException("User not found"));
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-		// 2. Check if user is verified (optional but recommended)
 		if (!user.isVerified()) {
-			throw new RuntimeException("Email not verified");
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Email not verified");
 		}
 
-		// 3. Check password
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-			throw new RuntimeException("Invalid password");
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
 		}
 
-		// 4. Generate JWT token
-		String token = jwtService.generateToken(user);
-		
-		// 5. Return token
-		return new AuthResponse(token);
+		return new AuthResponse(jwtService.generateToken(user));
 	}
 }
-

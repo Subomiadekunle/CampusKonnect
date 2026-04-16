@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -85,9 +86,38 @@ class AuthServiceTest {
 		when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(user));
 		when(passwordEncoder.matches("wrong", "hashed-password")).thenReturn(false);
 
-		RuntimeException error = assertThrows(RuntimeException.class, () -> authService.login(request));
+		ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> authService.login(request));
 
-		assertEquals("Invalid password", error.getMessage());
+		assertEquals(HttpStatus.UNAUTHORIZED, error.getStatusCode());
+		assertEquals("Invalid password", error.getReason());
+		verify(jwtService, never()).generateToken(any(User.class));
+	}
+
+	@Test
+	void loginFailsWhenUserNotFound() {
+		LoginRequest request = new LoginRequest("missing@slu.edu", "secret123");
+		when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
+
+		ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> authService.login(request));
+
+		assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+		assertEquals("User not found", error.getReason());
+		verify(jwtService, never()).generateToken(any(User.class));
+	}
+
+	@Test
+	void loginFailsWhenEmailNotVerified() {
+		LoginRequest request = new LoginRequest("sam@slu.edu", "secret123");
+		User user = new User("Sam", "sam@slu.edu");
+		user.setPassword("hashed-password");
+		user.setVerified(false);
+
+		when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(user));
+
+		ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> authService.login(request));
+
+		assertEquals(HttpStatus.FORBIDDEN, error.getStatusCode());
+		assertEquals("Email not verified", error.getReason());
 		verify(jwtService, never()).generateToken(any(User.class));
 	}
 
