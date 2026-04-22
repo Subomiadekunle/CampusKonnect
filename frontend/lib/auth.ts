@@ -27,6 +27,7 @@ export type RegistrationResponse = {
 export type UserProfile = {
   name: string;
   email: string;
+  preferences: string[];
 };
 
 export type ServiceListing = {
@@ -63,6 +64,9 @@ export type CreateServiceListingRequest = {
 
 const API_BASE_URL = 'http://localhost:8080';
 const AUTH_TOKEN_STORAGE_KEY = 'campuskonnect-auth-token';
+
+// Set to true to bypass the backend for local UI development
+const MOCK_MODE = true;
 
 let authToken: string | null = null;
 
@@ -123,10 +127,16 @@ async function getJson<TResponse>(path: string, fallbackError: string): Promise<
 
 // Keep auth requests in one place so screens can stay focused on UI and validation.
 export async function registerUser(body: RegisterRequest): Promise<RegistrationResponse> {
+  if (MOCK_MODE) return { message: 'Registration successful. Please verify your email.' };
   return postJson<RegistrationResponse>('/auth/register', body, 'Registration failed.');
 }
 
 export async function loginUser(body: LoginRequest): Promise<AuthResponse> {
+  if (MOCK_MODE) {
+    const token = 'mock-jwt-token';
+    await persistAuthToken(token);
+    return { token };
+  }
   return postJson<AuthResponse>('/auth/login', body, 'Login failed.');
 }
 
@@ -144,11 +154,41 @@ export async function clearAuthToken(): Promise<void> {
   storage?.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
+const MOCK_PREFERENCES_KEY = 'campuskonnect-mock-preferences';
+
 export async function getCurrentUser(): Promise<UserProfile> {
+  if (MOCK_MODE) {
+    const stored = storage?.getItem(MOCK_PREFERENCES_KEY);
+    const preferences: string[] = stored ? JSON.parse(stored) : [];
+    return { name: 'Test User', email: 'test@slu.edu', preferences };
+  }
   return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
 }
 
+export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
+  if (MOCK_MODE) {
+    storage?.setItem(MOCK_PREFERENCES_KEY, JSON.stringify(preferences));
+    return { name: 'Test User', email: 'test@slu.edu', preferences };
+  }
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences);
+    return response.data as UserProfile;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message || err.response?.data?.error || 'Unable to save preferences.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to save preferences.');
+  }
+}
+
 export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthResponse> {
+  if (MOCK_MODE) {
+    const token = 'mock-jwt-token';
+    await persistAuthToken(token);
+    return { token };
+  }
   const params = new URLSearchParams({
     email: body.email.trim().toLowerCase(),
     code: body.code.trim(),
@@ -212,9 +252,11 @@ export async function createServiceListing(
 }
 
 export async function getAllServiceListings(): Promise<ServiceListing[]> {
+  if (MOCK_MODE) return [];
   return getJson<ServiceListing[]>('/api/listings', 'Unable to load listings.');
 }
 
 export async function getMyServiceListings(): Promise<ServiceListing[]> {
+  if (MOCK_MODE) return [];
   return getJson<ServiceListing[]>('/api/listings/mine', 'Unable to load your listings.');
 }

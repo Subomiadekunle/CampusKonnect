@@ -1,4 +1,6 @@
 package backend.user.dto;
 
-public record UserProfileResponse(String name, String email) {
+import java.util.List;
+
+public record UserProfileResponse(String name, String email, List<String> preferences) {
 }

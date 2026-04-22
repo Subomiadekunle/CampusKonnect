@@ -1,11 +1,17 @@
 package backend.user;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "campus_users")
@@ -30,6 +36,11 @@ public class User {
 	// Store whether the account has completed email verification.
 	@Column(nullable = false)
 	private boolean isVerified = false;
+
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "user_preferences", joinColumns = @JoinColumn(name = "user_id"))
+	@Column(name = "preference")
+	private List<String> preferences = new ArrayList<>();
 
 	protected User() {
 	}
@@ -74,5 +85,13 @@ public class User {
 
 	public void setVerified(boolean verified) {
 		isVerified = verified;
+	}
+
+	public List<String> getPreferences() {
+		return preferences;
+	}
+
+	public void setPreferences(List<String> preferences) {
+		this.preferences = preferences;
 	}
 }

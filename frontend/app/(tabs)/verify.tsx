@@ -56,7 +56,7 @@ export default function VerifyScreen() {
 
       await persistAuthToken(response.token);
       setSuccessMessage('Email verified successfully.');
-      router.replace('/');
+      router.replace('/preferences');
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Unable to verify code right now.');
     } finally {
