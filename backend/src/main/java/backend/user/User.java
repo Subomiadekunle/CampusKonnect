@@ -42,6 +42,9 @@ public class User {
 	@Column(name = "preference")
 	private List<String> preferences = new ArrayList<>();
 
+	@Column
+	private String university;
+
 	protected User() {
 	}
 
@@ -93,5 +96,13 @@ public class User {
 
 	public void setPreferences(List<String> preferences) {
 		this.preferences = preferences;
+	}
+
+	public String getUniversity() {
+		return university;
+	}
+
+	public void setUniversity(String university) {
+		this.university = university;
 	}
 }

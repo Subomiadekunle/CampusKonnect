@@ -1,161 +1,121 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  RefreshControl,
-  ScrollView,
+  Platform,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { getAllServiceListings, ServiceListing } from '@/lib/auth';
+import axios from 'axios';
+
+import { getCurrentUser } from '@/lib/auth';
+import CampusMap from '@/components/CampusMap';
+import { MOCK_MAP_LISTINGS } from '@/components/GoogleMapView';
+
+type Coords = { latitude: number; longitude: number };
+
+async function geocodeUniversity(name: string): Promise<Coords | null> {
+  try {
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: { q: name, format: 'json', limit: 1 },
+      headers: { 'User-Agent': 'CampusKonnect/1.0' },
+    });
+    const result = response.data[0];
+    if (!result) return null;
+    return { latitude: parseFloat(result.lat), longitude: parseFloat(result.lon) };
+  } catch {
+    return null;
+  }
+}
 
 export default function HomeScreen() {
-  const [listings, setListings] = useState<ServiceListing[]>([]);
+  const [campusCoords, setCampusCoords] = useState<Coords | null>(null);
+  const [university, setUniversity] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const loadListings = useCallback(async (refresh = false) => {
-    try {
-      if (refresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setErrorMessage('');
-
-      const response = await getAllServiceListings();
-      setListings(response);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to load listings.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
+  const [selectedListing, setSelectedListing] = useState<(typeof MOCK_MAP_LISTINGS)[0] | null>(null);
 
   useEffect(() => {
-    loadListings();
-  }, [loadListings]);
+    getCurrentUser().then((profile) => {
+      if (profile.university) {
+        setUniversity(profile.university);
+        geocodeUniversity(profile.university).then((coords) => {
+          setCampusCoords(coords);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#4FC3F7" />
+        <Text style={styles.loadingText}>Loading campus map...</Text>
+      </View>
+    );
+  }
+
+  if (!university) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.promptTitle}>Welcome to CampusKonnect</Text>
+        <Text style={styles.promptSubtitle}>
+          Go to Account and add your university to see services near your campus.
+        </Text>
+      </View>
+    );
+  }
+
+  if (!campusCoords) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.promptTitle}>Could not find your campus</Text>
+        <Text style={styles.promptSubtitle}>
+          Try updating your university name in Account.
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={() => loadListings(true)} />
-      }
-    >
-      <Text style={styles.title}>Listings Around You</Text>
-      <Text style={styles.subtitle}>
-        Browse available student services near campus. Use the Create tab to publish your own listing.
-      </Text>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Nearby Listings</Text>
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-        {isLoading ? (
-          <ActivityIndicator color="#0288D1" />
-        ) : listings.length === 0 ? (
-          <Text style={styles.emptyText}>No listings found yet.</Text>
-        ) : (
-          listings.map((listing) => (
-            <View style={styles.listingCard} key={listing.id}>
-              {listing.imageUrls?.length ? (
-                <Image
-                  source={{ uri: `http://localhost:8080${listing.imageUrls[0]}` }}
-                  style={styles.listingImage}
-                />
-              ) : null}
-              <Text style={styles.listingTitle}>{listing.serviceTitle}</Text>
-              <Text style={styles.listingMeta}>
-                {listing.category} • ${listing.price}/{listing.priceType}
-              </Text>
-              <Text style={styles.listingLabel}>Description</Text>
-              <Text style={styles.listingValue}>{listing.description}</Text>
-              <Text style={styles.listingLabel}>Service Area</Text>
-              <Text style={styles.listingValue}>{listing.serviceArea}</Text>
-              <Text style={styles.listingLabel}>Availability</Text>
-              <Text style={styles.listingValue}>{listing.availability}</Text>
-            </View>
-          ))
-        )}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Nearby Listings</Text>
+        <Text style={styles.headerUniversity}>{university}</Text>
       </View>
-    </ScrollView>
+      <CampusMap
+        campusCoords={campusCoords}
+        listings={MOCK_MAP_LISTINGS}
+        selectedListing={selectedListing}
+        onSelectListing={setSelectedListing}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#F6FBFF',
-    paddingBottom: 40,
-    gap: 14,
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 32,
+    gap: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0D0D0D',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#546E7A',
-  },
-  card: {
+  header: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#D6EAF8',
-    gap: 10,
+    paddingTop: Platform.OS === 'ios' ? 52 : 40,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8F4FD',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0D0D0D',
-  },
-  listingCard: {
-    borderWidth: 1,
-    borderColor: '#E3F2FD',
-    borderRadius: 10,
-    padding: 10,
-    gap: 4,
-    backgroundColor: '#FAFDFF',
-  },
-  listingImage: {
-    width: '100%',
-    height: 160,
-    borderRadius: 10,
-    marginBottom: 6,
-    backgroundColor: '#E5E7EB',
-  },
-  listingTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0D0D0D',
-  },
-  listingMeta: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2563EB',
-    marginBottom: 4,
-  },
-  listingLabel: {
-    fontSize: 12,
-    color: '#607D8B',
-    fontWeight: '600',
-  },
-  listingValue: {
-    fontSize: 14,
-    color: '#102027',
-    marginBottom: 4,
-  },
-  emptyText: {
-    color: '#607D8B',
-  },
-  errorText: {
-    color: '#B71C1C',
-    fontWeight: '600',
-  },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#0D0D0D' },
+  headerUniversity: { fontSize: 13, fontWeight: '600', color: '#1976D2', marginTop: 2 },
+  loadingText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
+  promptTitle: { fontSize: 20, fontWeight: '700', color: '#0D0D0D', textAlign: 'center' },
+  promptSubtitle: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 },
 });

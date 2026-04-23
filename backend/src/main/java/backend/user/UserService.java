@@ -25,4 +25,10 @@ public class UserService {
 		user.setPreferences(preferences);
 		return userRepository.save(user);
 	}
+
+	public User updateUniversity(String email, String university) {
+		User user = requireByEmail(email);
+		user.setUniversity(university);
+		return userRepository.save(user);
+	}
 }

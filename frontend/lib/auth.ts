@@ -28,6 +28,7 @@ export type UserProfile = {
   name: string;
   email: string;
   preferences: string[];
+  university: string | null;
 };
 
 export type ServiceListing = {
@@ -155,20 +156,50 @@ export async function clearAuthToken(): Promise<void> {
 }
 
 const MOCK_PREFERENCES_KEY = 'campuskonnect-mock-preferences';
+const MOCK_UNIVERSITY_KEY = 'campuskonnect-mock-university';
+const USER_LOCATION_KEY = 'campuskonnect-user-location';
+
+export function getUserLocation(): string {
+  return storage?.getItem(USER_LOCATION_KEY) ?? '';
+}
+
+export function saveUserLocation(location: string): void {
+  storage?.setItem(USER_LOCATION_KEY, location);
+}
 
 export async function getCurrentUser(): Promise<UserProfile> {
   if (MOCK_MODE) {
     const stored = storage?.getItem(MOCK_PREFERENCES_KEY);
     const preferences: string[] = stored ? JSON.parse(stored) : [];
-    return { name: 'Test User', email: 'test@slu.edu', preferences };
+    const university = storage?.getItem(MOCK_UNIVERSITY_KEY) ?? null;
+    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
   }
   return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
+}
+
+export async function saveUniversity(university: string): Promise<UserProfile> {
+  if (MOCK_MODE) {
+    storage?.setItem(MOCK_UNIVERSITY_KEY, university);
+    const stored = storage?.getItem(MOCK_PREFERENCES_KEY);
+    const preferences: string[] = stored ? JSON.parse(stored) : [];
+    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
+  }
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/users/university`, { university });
+    return response.data as UserProfile;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      throw new Error(err.response?.data?.message || err.response?.data?.error || 'Unable to save university.');
+    }
+    throw new Error('Unable to save university.');
+  }
 }
 
 export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
   if (MOCK_MODE) {
     storage?.setItem(MOCK_PREFERENCES_KEY, JSON.stringify(preferences));
-    return { name: 'Test User', email: 'test@slu.edu', preferences };
+    const university = storage?.getItem(MOCK_UNIVERSITY_KEY) ?? null;
+    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
   }
   try {
     const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences);
