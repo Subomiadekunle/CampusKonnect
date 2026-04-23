@@ -8,6 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.listing.dto.CreateServiceListingRequest;
+import backend.listing.dto.AiDescriptionRequest;
+import backend.listing.dto.AiDescriptionResponse;
 import backend.listing.dto.ServiceListingResponse;
 import backend.user.User;
 import java.math.BigDecimal;
@@ -33,6 +35,9 @@ class ServiceListingServiceTest {
 
 	@Mock
 	private ListingImageStorageService listingImageStorageService;
+
+	@Mock
+	private AiDescriptionService aiDescriptionService;
 
 	@InjectMocks
 	private ServiceListingService serviceListingService;
@@ -191,5 +196,37 @@ class ServiceListingServiceTest {
 
 		assertEquals(1, result.size());
 		assertEquals("Chem tutoring", result.getFirst().serviceTitle());
+	}
+
+	@Test
+	void improveDescriptionDelegatesToAiService() {
+		AiDescriptionRequest request = new AiDescriptionRequest(
+			"I can tutor calc",
+			"Tutoring",
+			"Pius",
+			"Professional"
+		);
+		when(userService.requireByEmail("rahmed16@slu.edu")).thenReturn(new User("Ramedan", "rahmed16@slu.edu"));
+		when(aiDescriptionService.improveDescription(any(AiDescriptionRequest.class)))
+			.thenReturn("I provide clear and reliable calculus tutoring for students.");
+
+		AiDescriptionResponse response = serviceListingService.improveDescription("rahmed16@slu.edu", request);
+
+		assertEquals("I provide clear and reliable calculus tutoring for students.", response.improvedDescription());
+		verify(userService).requireByEmail("rahmed16@slu.edu");
+		verify(aiDescriptionService).improveDescription(any(AiDescriptionRequest.class));
+	}
+
+	@Test
+	void improveDescriptionRejectsMissingDescription() {
+		AiDescriptionRequest request = new AiDescriptionRequest("   ", "Tutoring", "Pius", "Professional");
+
+		ResponseStatusException error = assertThrows(
+			ResponseStatusException.class,
+			() -> serviceListingService.improveDescription("rahmed16@slu.edu", request)
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+		assertEquals("description is required", error.getReason());
 	}
 }

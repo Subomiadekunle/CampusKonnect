@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import backend.listing.dto.CreateServiceListingRequest;
+import backend.listing.dto.AiDescriptionRequest;
+import backend.listing.dto.AiDescriptionResponse;
 import backend.listing.dto.ServiceListingResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -154,5 +156,20 @@ class ServiceListingControllerTest {
 		assertEquals(1, response.getBody().size());
 		verify(serviceListingService).requireOwnerIdByEmail("rahmed16@slu.edu");
 		verify(serviceListingService).getOwnerListings(2L);
+	}
+
+	@Test
+	void improveDescriptionReturnsImprovedText() {
+		AiDescriptionRequest request = new AiDescriptionRequest("help with calculus and physics", "Tutoring", "Pius", "Professional");
+		AiDescriptionResponse expected = new AiDescriptionResponse("I provide clear calculus and physics tutoring sessions.");
+
+		when(authentication.getName()).thenReturn("rahmed16@slu.edu");
+		when(serviceListingService.improveDescription("rahmed16@slu.edu", request)).thenReturn(expected);
+
+		ResponseEntity<AiDescriptionResponse> response = serviceListingController.improveDescription(authentication, request);
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(expected.improvedDescription(), response.getBody().improvedDescription());
+		verify(serviceListingService).improveDescription("rahmed16@slu.edu", request);
 	}
 }

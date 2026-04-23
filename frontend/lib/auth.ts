@@ -61,6 +61,17 @@ export type CreateServiceListingRequest = {
   images?: ListingImageUpload[];
 };
 
+export type ImproveListingDescriptionRequest = {
+  description: string;
+  serviceType?: string;
+  location?: string;
+  tone?: string;
+};
+
+export type ImproveListingDescriptionResponse = {
+  improvedDescription: string;
+};
+
 const API_BASE_URL = 'http://localhost:8080';
 const AUTH_TOKEN_STORAGE_KEY = 'campuskonnect-auth-token';
 
@@ -98,7 +109,11 @@ async function postJson<TResponse>(path: string, body: unknown, fallbackError: s
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
-        err.response?.data?.message || err.response?.data?.error || fallbackError;
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        fallbackError;
       throw new Error(errorMessage);
     }
 
@@ -113,7 +128,11 @@ async function getJson<TResponse>(path: string, fallbackError: string): Promise<
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
-        err.response?.data?.message || err.response?.data?.error || fallbackError;
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        fallbackError;
       throw new Error(errorMessage);
     }
 
@@ -217,4 +236,32 @@ export async function getAllServiceListings(): Promise<ServiceListing[]> {
 
 export async function getMyServiceListings(): Promise<ServiceListing[]> {
   return getJson<ServiceListing[]>('/api/listings/mine', 'Unable to load your listings.');
+}
+
+export async function improveServiceListingDescription(
+  body: ImproveListingDescriptionRequest
+): Promise<ImproveListingDescriptionResponse> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/listings/ai-description`, body, {
+      timeout: 25000,
+    });
+    return response.data as ImproveListingDescriptionResponse;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNABORTED') {
+        throw new Error('AI request timed out. Please try again in a moment.');
+      }
+      if (err.response?.status === 504) {
+        throw new Error('AI service timed out. Please try again in a few seconds.');
+      }
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to improve description right now.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to improve description right now.');
+  }
 }
