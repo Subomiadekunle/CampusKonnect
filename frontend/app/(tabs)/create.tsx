@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { createServiceListing } from '@/lib/auth';
+import { createServiceListing, improveServiceListingDescription } from '@/lib/auth';
+
+const PRICE_TYPE_OPTIONS = ['Per Hour', 'Flat Rate'] as const;
 
 export default function CreateListingScreen() {
   const [serviceTitle, setServiceTitle] = useState('');
@@ -13,6 +15,8 @@ export default function CreateListingScreen() {
   const [serviceArea, setServiceArea] = useState('');
   const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImprovingDescription, setIsImprovingDescription] = useState(false);
+  const [isPriceTypeDropdownOpen, setIsPriceTypeDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -54,6 +58,37 @@ export default function CreateListingScreen() {
     setSelectedImages([]);
     setErrorMessage('');
     setSuccessMessage('');
+    setIsImprovingDescription(false);
+    setIsPriceTypeDropdownOpen(false);
+  };
+
+  const handleImproveDescription = async () => {
+    if (!description.trim()) {
+      setErrorMessage('Add a description first, then tap Improve with AI.');
+      return;
+    }
+
+    try {
+      setIsImprovingDescription(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      const response = await improveServiceListingDescription({
+        description: description.trim(),
+        serviceType: category.trim() || undefined,
+        location: serviceArea.trim() || undefined,
+      });
+
+      setDescription(response.improvedDescription);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to improve description right now. Please try again.'
+      );
+    } finally {
+      setIsImprovingDescription(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -137,7 +172,7 @@ export default function CreateListingScreen() {
         <Text style={styles.label}>Service Title *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., Professional House Cleaning"
+          placeholder="e.g., Hair Braiding"
           value={serviceTitle}
           onChangeText={setServiceTitle}
         />
@@ -150,7 +185,20 @@ export default function CreateListingScreen() {
           onChangeText={setCategory}
         />
 
-        <Text style={styles.label}>Description *</Text>
+        <View style={styles.descriptionHeaderRow}>
+          <Text style={styles.label}>Description *</Text>
+          <TouchableOpacity
+            style={[styles.aiButton, (isImprovingDescription || isSubmitting) && styles.disabledButton]}
+            onPress={handleImproveDescription}
+            disabled={isImprovingDescription || isSubmitting}
+          >
+            {isImprovingDescription ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.aiButtonText}>Improve with AI</Text>
+            )}
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={[styles.input, styles.multilineInput]}
           placeholder="Describe your service, experience, and what you offer..."
@@ -158,6 +206,9 @@ export default function CreateListingScreen() {
           onChangeText={setDescription}
           multiline
         />
+        <Text style={styles.aiHintText}>
+          Enter a description, then use AI to improve wording before publishing.
+        </Text>
 
         <View style={styles.row}>
           <View style={styles.halfWidth}>
@@ -173,12 +224,41 @@ export default function CreateListingScreen() {
 
           <View style={styles.halfWidth}>
             <Text style={styles.label}>Price Type *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Per Hour"
-              value={priceType}
-              onChangeText={setPriceType}
-            />
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                activeOpacity={0.85}
+                onPress={() => setIsPriceTypeDropdownOpen((current) => !current)}
+              >
+                <Text style={priceType ? styles.dropdownText : styles.dropdownPlaceholder}>
+                  {priceType || 'Select price type'}
+                </Text>
+                <Text style={styles.dropdownChevron}>{isPriceTypeDropdownOpen ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+
+              {isPriceTypeDropdownOpen ? (
+                <View style={styles.dropdownMenu}>
+                  {PRICE_TYPE_OPTIONS.map((option) => {
+                    const isSelected = priceType === option;
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                        onPress={() => {
+                          setPriceType(option);
+                          setIsPriceTypeDropdownOpen(false);
+                        }}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={[styles.dropdownOptionText, isSelected && styles.dropdownOptionTextSelected]}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
           </View>
         </View>
 
@@ -232,6 +312,9 @@ const styles = StyleSheet.create({
     borderColor: '#E7E8EB',
     padding: 18,
     gap: 10,
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
   },
   title: {
     fontSize: 38,
@@ -324,6 +407,65 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
+  descriptionHeaderRow: {
+    marginTop: 6,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownContainer: {
+    position: 'relative',
+  },
+  dropdownTrigger: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownText: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dropdownPlaceholder: {
+    color: '#9CA3AF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  dropdownChevron: {
+    color: '#6B7280',
+    fontSize: 13,
+    marginLeft: 10,
+  },
+  dropdownMenu: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  dropdownOptionSelected: {
+    backgroundColor: '#EFF6FF',
+  },
+  dropdownOptionText: {
+    color: '#111827',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  dropdownOptionTextSelected: {
+    color: '#1D4ED8',
+  },
   actions: {
     flexDirection: 'row',
     gap: 10,
@@ -356,6 +498,34 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 20,
+  },
+  aiButton: {
+    backgroundColor: '#5B5CE2',
+    borderColor: '#93C5FD',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  aiButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  aiHintText: {
+    color: '#6366F1',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   successText: {
     color: '#166534',

@@ -1,6 +1,8 @@
 package backend.listing;
 
 import backend.listing.dto.CreateServiceListingRequest;
+import backend.listing.dto.AiDescriptionRequest;
+import backend.listing.dto.AiDescriptionResponse;
 import backend.listing.dto.ServiceListingResponse;
 import backend.user.User;
 import backend.user.UserService;
@@ -18,15 +20,18 @@ public class ServiceListingService {
 	private final ServiceListingRepository serviceListingRepository;
 	private final UserService userService;
 	private final ListingImageStorageService listingImageStorageService;
+	private final AiDescriptionService aiDescriptionService;
 
 	public ServiceListingService(
 		ServiceListingRepository serviceListingRepository,
 		UserService userService,
-		ListingImageStorageService listingImageStorageService
+		ListingImageStorageService listingImageStorageService,
+		AiDescriptionService aiDescriptionService
 	) {
 		this.serviceListingRepository = serviceListingRepository;
 		this.userService = userService;
 		this.listingImageStorageService = listingImageStorageService;
+		this.aiDescriptionService = aiDescriptionService;
 	}
 
 	@Transactional
@@ -76,6 +81,21 @@ public class ServiceListingService {
 			.toList();
 	}
 
+	public AiDescriptionResponse improveDescription(String ownerEmail, AiDescriptionRequest request) {
+		validateAiDescriptionRequest(request);
+		userService.requireByEmail(ownerEmail);
+
+		AiDescriptionRequest normalizedRequest = new AiDescriptionRequest(
+			request.description().trim(),
+			trimOrNull(request.serviceType()),
+			trimOrNull(request.location()),
+			trimOrNull(request.tone())
+		);
+
+		String improvedDescription = aiDescriptionService.improveDescription(normalizedRequest);
+		return new AiDescriptionResponse(improvedDescription);
+	}
+
 	private void validateCreateRequest(CreateServiceListingRequest request) {
 		if (request == null
 			|| isBlank(request.serviceTitle())
@@ -92,6 +112,18 @@ public class ServiceListingService {
 		}
 	}
 
+	private void validateAiDescriptionRequest(AiDescriptionRequest request) {
+		if (request == null || isBlank(request.description())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "description is required");
+		}
+		if (request.description().trim().length() > 3000) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "description must be 3000 characters or fewer");
+		}
+		validateOptionalLength("serviceType", request.serviceType(), 120);
+		validateOptionalLength("location", request.location(), 120);
+		validateOptionalLength("tone", request.tone(), 60);
+	}
+
 	private BigDecimal parsePrice(String value) {
 		try {
 			BigDecimal parsed = new BigDecimal(value.trim());
@@ -106,5 +138,18 @@ public class ServiceListingService {
 
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
+	}
+
+	private String trimOrNull(String value) {
+		return isBlank(value) ? null : value.trim();
+	}
+
+	private void validateOptionalLength(String field, String value, int maxLength) {
+		if (!isBlank(value) && value.trim().length() > maxLength) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				field + " must be " + maxLength + " characters or fewer"
+			);
+		}
 	}
 }
