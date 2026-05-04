@@ -40,7 +40,9 @@ class ServiceListingControllerTest {
 		"25",
 		"Per Hour",
 		"Mon 4-7",
-		"Pius"
+		"Pius",
+		null,
+		null
 	);
 
 	@Test
@@ -55,6 +57,8 @@ class ServiceListingControllerTest {
 			"Per Hour",
 			"Mon 4-7",
 			"Pius",
+			38.6359,
+			-90.2344,
 			List.of(),
 			null,
 			null
@@ -94,6 +98,8 @@ class ServiceListingControllerTest {
 			"Per Hour",
 			"Mon 4-7",
 			"Pius",
+			38.6359,
+			-90.2344,
 			List.of("/uploads/listings/a.jpg"),
 			null,
 			null
@@ -130,7 +136,7 @@ class ServiceListingControllerTest {
 	@Test
 	void getAllListingsReturnsOkWithBody() {
 		List<ServiceListingResponse> expected = List.of(
-			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", List.of(), null, null)
+			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", 38.6359, -90.2344, List.of(), null, null)
 		);
 		when(serviceListingService.getAllListings()).thenReturn(expected);
 
@@ -144,7 +150,7 @@ class ServiceListingControllerTest {
 	@Test
 	void getMyListingsReturnsOkWithOwnerListings() {
 		List<ServiceListingResponse> expected = List.of(
-			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", List.of(), null, null)
+			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", 38.6359, -90.2344, List.of(), null, null)
 		);
 		when(authentication.getName()).thenReturn("rahmed16@slu.edu");
 		when(serviceListingService.requireOwnerIdByEmail("rahmed16@slu.edu")).thenReturn(2L);

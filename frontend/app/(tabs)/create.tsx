@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SERVICE_CATEGORIES } from '@/constants/service-categories';
 import { createServiceListing, improveServiceListingDescription } from '@/lib/auth';
 
 const PRICE_TYPE_OPTIONS = ['Per Hour', 'Flat Rate'] as const;
@@ -17,6 +18,7 @@ export default function CreateListingScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImprovingDescription, setIsImprovingDescription] = useState(false);
   const [isPriceTypeDropdownOpen, setIsPriceTypeDropdownOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -60,6 +62,7 @@ export default function CreateListingScreen() {
     setSuccessMessage('');
     setIsImprovingDescription(false);
     setIsPriceTypeDropdownOpen(false);
+    setIsCategoryDropdownOpen(false);
   };
 
   const handleImproveDescription = async () => {
@@ -178,12 +181,43 @@ export default function CreateListingScreen() {
         />
 
         <Text style={styles.label}>Category *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Select a category"
-          value={category}
-          onChangeText={setCategory}
-        />
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdownTrigger}
+            activeOpacity={0.85}
+            onPress={() => setIsCategoryDropdownOpen((current) => !current)}
+          >
+            <Text style={category ? styles.dropdownText : styles.dropdownPlaceholder}>
+              {category || 'Select a category'}
+            </Text>
+            <Text style={styles.dropdownChevron}>{isCategoryDropdownOpen ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {isCategoryDropdownOpen ? (
+            <View style={styles.dropdownMenu}>
+              <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                {SERVICE_CATEGORIES.map((option) => {
+                  const isSelected = category === option;
+                  return (
+                    <TouchableOpacity
+                      key={option}
+                      style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                      onPress={() => {
+                        setCategory(option);
+                        setIsCategoryDropdownOpen(false);
+                      }}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={[styles.dropdownOptionText, isSelected && styles.dropdownOptionTextSelected]}>
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
+        </View>
 
         <View style={styles.descriptionHeaderRow}>
           <Text style={styles.label}>Description *</Text>
@@ -273,10 +307,13 @@ export default function CreateListingScreen() {
         <Text style={styles.label}>Service Area *</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., San Francisco, CA"
+          placeholder="e.g., Spring Hall, Saint Louis University"
           value={serviceArea}
           onChangeText={setServiceArea}
         />
+        <Text style={styles.aiHintText}>
+          Use a specific campus building or location so the listing can appear on the map.
+        </Text>
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.secondaryButton} onPress={handleCancel} disabled={isSubmitting}>
@@ -450,6 +487,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
+    maxHeight: 220,
+  },
+  dropdownScroll: {
+    maxHeight: 220,
   },
   dropdownOption: {
     paddingVertical: 12,
@@ -538,4 +579,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-

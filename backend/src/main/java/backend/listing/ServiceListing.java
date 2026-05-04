@@ -50,6 +50,12 @@ public class ServiceListing {
 	@Column(nullable = false, length = 255)
 	private String serviceArea;
 
+	@Column
+	private Double latitude;
+
+	@Column
+	private Double longitude;
+
 	@ElementCollection
 	@CollectionTable(name = "service_listing_images", joinColumns = @JoinColumn(name = "listing_id"))
 	@Column(name = "image_url", nullable = false, length = 500)
@@ -72,7 +78,9 @@ public class ServiceListing {
 		BigDecimal price,
 		String priceType,
 		String availability,
-		String serviceArea
+		String serviceArea,
+		Double latitude,
+		Double longitude
 	) {
 		this.owner = owner;
 		this.serviceTitle = serviceTitle;
@@ -82,6 +90,8 @@ public class ServiceListing {
 		this.priceType = priceType;
 		this.availability = availability;
 		this.serviceArea = serviceArea;
+		this.latitude = latitude;
+		this.longitude = longitude;
 		this.createdAt = Instant.now();
 		this.updatedAt = this.createdAt;
 	}
@@ -152,6 +162,22 @@ public class ServiceListing {
 
 	public void setServiceArea(String serviceArea) {
 		this.serviceArea = serviceArea;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
 	}
 
 	public List<String> getImageUrls() {

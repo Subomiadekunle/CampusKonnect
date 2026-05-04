@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 export type RegisterRequest = {
   name: string;
@@ -27,6 +28,8 @@ export type RegistrationResponse = {
 export type UserProfile = {
   name: string;
   email: string;
+  preferences?: string[];
+  university?: string | null;
 };
 
 export type ServiceListing = {
@@ -39,6 +42,8 @@ export type ServiceListing = {
   priceType: string;
   availability: string;
   serviceArea: string;
+  latitude: number | null;
+  longitude: number | null;
   imageUrls: string[];
   createdAt: string;
   updatedAt: string;
@@ -58,6 +63,8 @@ export type CreateServiceListingRequest = {
   priceType: string;
   availability: string;
   serviceArea: string;
+  latitude?: number;
+  longitude?: number;
   images?: ListingImageUpload[];
 };
 
@@ -167,6 +174,54 @@ export async function getCurrentUser(): Promise<UserProfile> {
   return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
 }
 
+export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data as UserProfile;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to save preferences.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to save preferences.');
+  }
+}
+
+export async function saveUniversity(university: string): Promise<UserProfile> {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/users/university`,
+      { university },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data as UserProfile;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to save university.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to save university.');
+  }
+}
+
 export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthResponse> {
   const params = new URLSearchParams({
     email: body.email.trim().toLowerCase(),
@@ -202,16 +257,27 @@ export async function createServiceListing(
       priceType: body.priceType,
       availability: body.availability,
       serviceArea: body.serviceArea,
+      latitude: body.latitude,
+      longitude: body.longitude,
     })
   );
 
-  (body.images ?? []).forEach((image, index) => {
-    formData.append('images', {
-      uri: image.uri,
-      name: image.name || `listing-image-${index + 1}.jpg`,
-      type: image.type || 'image/jpeg',
-    } as any);
-  });
+  for (const [index, image] of (body.images ?? []).entries()) {
+    const fileName = image.name || `listing-image-${index + 1}.jpg`;
+    const fileType = image.type || 'image/jpeg';
+
+    if (Platform.OS === 'web') {
+      const blobResponse = await fetch(image.uri);
+      const blob = await blobResponse.blob();
+      (formData as any).append('images', blob, fileName);
+    } else {
+      formData.append('images', {
+        uri: image.uri,
+        name: fileName,
+        type: fileType,
+      } as any);
+    }
+  }
 
   try {
     const response = await axios.post(`${API_BASE_URL}/api/listings`, formData, {
@@ -232,6 +298,17 @@ export async function createServiceListing(
 
 export async function getAllServiceListings(): Promise<ServiceListing[]> {
   return getJson<ServiceListing[]>('/api/listings', 'Unable to load listings.');
+}
+
+export function resolveApiAssetUrl(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return `${API_BASE_URL}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }
 
 export async function getMyServiceListings(): Promise<ServiceListing[]> {
