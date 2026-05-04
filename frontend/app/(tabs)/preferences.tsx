@@ -11,6 +11,7 @@ import {
 import { router } from 'expo-router';
 
 import { saveUserPreferences } from '@/lib/auth';
+<<<<<<< HEAD
 
 const CATEGORIES: { label: string; emoji: string }[] = [
   { label: 'Nails', emoji: '💅' },
@@ -34,6 +35,14 @@ const CATEGORIES: { label: string; emoji: string }[] = [
   { label: 'Jewelry Making', emoji: '💎' },
   { label: 'Painting & Art', emoji: '🖌️' },
 ];
+=======
+import { SERVICE_CATEGORIES } from '@/constants/service-categories';
+
+const CATEGORIES: { label: string; emoji: string }[] = SERVICE_CATEGORIES.map((category) => ({
+  label: category,
+  emoji: '✨',
+}));
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 
 export default function PreferencesScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -78,7 +87,11 @@ export default function PreferencesScreen() {
           </View>
           <Text style={styles.title}>What are you into?</Text>
           <Text style={styles.subtitle}>
+<<<<<<< HEAD
             Pick the services you're interested in. We'll personalize your feed.
+=======
+            Pick the services you&apos;re interested in. We&apos;ll personalize your feed.
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
           </Text>
         </View>
 

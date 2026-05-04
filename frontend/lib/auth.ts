@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 export type RegisterRequest = {
   name: string;
@@ -27,8 +28,13 @@ export type RegistrationResponse = {
 export type UserProfile = {
   name: string;
   email: string;
+<<<<<<< HEAD
   preferences: string[];
   university: string | null;
+=======
+  preferences?: string[];
+  university?: string | null;
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 };
 
 export type ServiceListing = {
@@ -41,6 +47,8 @@ export type ServiceListing = {
   priceType: string;
   availability: string;
   serviceArea: string;
+  latitude: number | null;
+  longitude: number | null;
   imageUrls: string[];
   createdAt: string;
   updatedAt: string;
@@ -60,7 +68,20 @@ export type CreateServiceListingRequest = {
   priceType: string;
   availability: string;
   serviceArea: string;
+  latitude?: number;
+  longitude?: number;
   images?: ListingImageUpload[];
+};
+
+export type ImproveListingDescriptionRequest = {
+  description: string;
+  serviceType?: string;
+  location?: string;
+  tone?: string;
+};
+
+export type ImproveListingDescriptionResponse = {
+  improvedDescription: string;
 };
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -103,7 +124,11 @@ async function postJson<TResponse>(path: string, body: unknown, fallbackError: s
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
-        err.response?.data?.message || err.response?.data?.error || fallbackError;
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        fallbackError;
       throw new Error(errorMessage);
     }
 
@@ -118,7 +143,11 @@ async function getJson<TResponse>(path: string, fallbackError: string): Promise<
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
-        err.response?.data?.message || err.response?.data?.error || fallbackError;
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        fallbackError;
       throw new Error(errorMessage);
     }
 
@@ -177,6 +206,7 @@ export async function getCurrentUser(): Promise<UserProfile> {
   return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
 }
 
+<<<<<<< HEAD
 export async function saveUniversity(university: string): Promise<UserProfile> {
   if (MOCK_MODE) {
     storage?.setItem(MOCK_UNIVERSITY_KEY, university);
@@ -203,17 +233,63 @@ export async function saveUserPreferences(preferences: string[]): Promise<UserPr
   }
   try {
     const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences);
+=======
+export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
     return response.data as UserProfile;
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
+<<<<<<< HEAD
         err.response?.data?.message || err.response?.data?.error || 'Unable to save preferences.';
+=======
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to save preferences.';
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
       throw new Error(errorMessage);
     }
     throw new Error('Unable to save preferences.');
   }
 }
 
+<<<<<<< HEAD
+=======
+export async function saveUniversity(university: string): Promise<UserProfile> {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/users/university`,
+      { university },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data as UserProfile;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to save university.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to save university.');
+  }
+}
+
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthResponse> {
   if (MOCK_MODE) {
     const token = 'mock-jwt-token';
@@ -254,16 +330,27 @@ export async function createServiceListing(
       priceType: body.priceType,
       availability: body.availability,
       serviceArea: body.serviceArea,
+      latitude: body.latitude,
+      longitude: body.longitude,
     })
   );
 
-  (body.images ?? []).forEach((image, index) => {
-    formData.append('images', {
-      uri: image.uri,
-      name: image.name || `listing-image-${index + 1}.jpg`,
-      type: image.type || 'image/jpeg',
-    } as any);
-  });
+  for (const [index, image] of (body.images ?? []).entries()) {
+    const fileName = image.name || `listing-image-${index + 1}.jpg`;
+    const fileType = image.type || 'image/jpeg';
+
+    if (Platform.OS === 'web') {
+      const blobResponse = await fetch(image.uri);
+      const blob = await blobResponse.blob();
+      (formData as any).append('images', blob, fileName);
+    } else {
+      formData.append('images', {
+        uri: image.uri,
+        name: fileName,
+        type: fileType,
+      } as any);
+    }
+  }
 
   try {
     const response = await axios.post(`${API_BASE_URL}/api/listings`, formData, {
@@ -287,7 +374,46 @@ export async function getAllServiceListings(): Promise<ServiceListing[]> {
   return getJson<ServiceListing[]>('/api/listings', 'Unable to load listings.');
 }
 
+export function resolveApiAssetUrl(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return `${API_BASE_URL}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+}
+
 export async function getMyServiceListings(): Promise<ServiceListing[]> {
   if (MOCK_MODE) return [];
   return getJson<ServiceListing[]>('/api/listings/mine', 'Unable to load your listings.');
+}
+
+export async function improveServiceListingDescription(
+  body: ImproveListingDescriptionRequest
+): Promise<ImproveListingDescriptionResponse> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/listings/ai-description`, body, {
+      timeout: 25000,
+    });
+    return response.data as ImproveListingDescriptionResponse;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNABORTED') {
+        throw new Error('AI request timed out. Please try again in a moment.');
+      }
+      if (err.response?.status === 504) {
+        throw new Error('AI service timed out. Please try again in a few seconds.');
+      }
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.response?.data?.title ||
+        'Unable to improve description right now.';
+      throw new Error(errorMessage);
+    }
+    throw new Error('Unable to improve description right now.');
+  }
 }

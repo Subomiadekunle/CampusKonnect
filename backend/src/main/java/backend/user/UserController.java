@@ -3,6 +3,10 @@ package backend.user;
 import java.util.List;
 import java.util.Map;
 
+<<<<<<< HEAD
+=======
+import org.springframework.http.HttpStatus;
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import backend.user.dto.UserProfileResponse;
 
@@ -43,6 +48,12 @@ public class UserController {
 		Authentication authentication,
 		@RequestBody Map<String, String> body
 	) {
+<<<<<<< HEAD
+=======
+		if (body == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "university is required");
+		}
+>>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 		User user = userService.updateUniversity(authentication.getName(), body.get("university"));
 		return ResponseEntity.ok(new UserProfileResponse(user.getName(), user.getEmail(), user.getPreferences(), user.getUniversity()));
 	}

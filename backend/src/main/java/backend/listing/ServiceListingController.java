@@ -1,6 +1,8 @@
 package backend.listing;
 
 import backend.listing.dto.CreateServiceListingRequest;
+import backend.listing.dto.AiDescriptionRequest;
+import backend.listing.dto.AiDescriptionResponse;
 import backend.listing.dto.ServiceListingResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +59,14 @@ public class ServiceListingController {
 	public ResponseEntity<List<ServiceListingResponse>> getMyListings(Authentication authentication) {
 		Long ownerId = serviceListingService.requireOwnerIdByEmail(authentication.getName());
 		return ResponseEntity.ok(serviceListingService.getOwnerListings(ownerId));
+	}
+
+	@PostMapping(path = "/ai-description", consumes = "application/json")
+	public ResponseEntity<AiDescriptionResponse> improveDescription(
+		Authentication authentication,
+		@RequestBody AiDescriptionRequest request
+	) {
+		return ResponseEntity.ok(serviceListingService.improveDescription(authentication.getName(), request));
 	}
 
 	private CreateServiceListingRequest parseListingJson(String listingJson) {

@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import backend.listing.dto.CreateServiceListingRequest;
+import backend.listing.dto.AiDescriptionRequest;
+import backend.listing.dto.AiDescriptionResponse;
 import backend.listing.dto.ServiceListingResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -38,7 +40,9 @@ class ServiceListingControllerTest {
 		"25",
 		"Per Hour",
 		"Mon 4-7",
-		"Pius"
+		"Pius",
+		null,
+		null
 	);
 
 	@Test
@@ -53,6 +57,8 @@ class ServiceListingControllerTest {
 			"Per Hour",
 			"Mon 4-7",
 			"Pius",
+			38.6359,
+			-90.2344,
 			List.of(),
 			null,
 			null
@@ -92,6 +98,8 @@ class ServiceListingControllerTest {
 			"Per Hour",
 			"Mon 4-7",
 			"Pius",
+			38.6359,
+			-90.2344,
 			List.of("/uploads/listings/a.jpg"),
 			null,
 			null
@@ -128,7 +136,7 @@ class ServiceListingControllerTest {
 	@Test
 	void getAllListingsReturnsOkWithBody() {
 		List<ServiceListingResponse> expected = List.of(
-			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", List.of(), null, null)
+			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", 38.6359, -90.2344, List.of(), null, null)
 		);
 		when(serviceListingService.getAllListings()).thenReturn(expected);
 
@@ -142,7 +150,7 @@ class ServiceListingControllerTest {
 	@Test
 	void getMyListingsReturnsOkWithOwnerListings() {
 		List<ServiceListingResponse> expected = List.of(
-			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", List.of(), null, null)
+			new ServiceListingResponse(1L, 2L, "Calc tutoring", "Tutoring", "Math support", "25", "Per Hour", "Mon 4-7", "Pius", 38.6359, -90.2344, List.of(), null, null)
 		);
 		when(authentication.getName()).thenReturn("rahmed16@slu.edu");
 		when(serviceListingService.requireOwnerIdByEmail("rahmed16@slu.edu")).thenReturn(2L);
@@ -154,5 +162,20 @@ class ServiceListingControllerTest {
 		assertEquals(1, response.getBody().size());
 		verify(serviceListingService).requireOwnerIdByEmail("rahmed16@slu.edu");
 		verify(serviceListingService).getOwnerListings(2L);
+	}
+
+	@Test
+	void improveDescriptionReturnsImprovedText() {
+		AiDescriptionRequest request = new AiDescriptionRequest("help with calculus and physics", "Tutoring", "Pius", "Professional");
+		AiDescriptionResponse expected = new AiDescriptionResponse("I provide clear calculus and physics tutoring sessions.");
+
+		when(authentication.getName()).thenReturn("rahmed16@slu.edu");
+		when(serviceListingService.improveDescription("rahmed16@slu.edu", request)).thenReturn(expected);
+
+		ResponseEntity<AiDescriptionResponse> response = serviceListingController.improveDescription(authentication, request);
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(expected.improvedDescription(), response.getBody().improvedDescription());
+		verify(serviceListingService).improveDescription("rahmed16@slu.edu", request);
 	}
 }

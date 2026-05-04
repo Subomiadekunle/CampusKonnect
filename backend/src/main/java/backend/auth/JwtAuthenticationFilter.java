@@ -33,7 +33,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
 		String path = request.getRequestURI();
-		return path.startsWith("/auth/");
+		String method = request.getMethod();
+		boolean isAuthRoute = path.startsWith("/auth/");
+		boolean isPublicListingsRead = "GET".equalsIgnoreCase(method) && "/api/listings".equals(path);
+		boolean isPublicUploadAsset = "GET".equalsIgnoreCase(method) && path.startsWith("/uploads/");
+		return isAuthRoute || isPublicListingsRead || isPublicUploadAsset;
 	}
 
 	@Override
