@@ -20,10 +20,16 @@ public class ListingLocationGeocodingService {
 	private final RestClient restClient;
 
 	public ListingLocationGeocodingService() {
-		this.restClient = RestClient.builder()
-			.baseUrl(GEOCODER_BASE_URL)
-			.defaultHeader("User-Agent", GEOCODER_USER_AGENT)
-			.build();
+		this(
+			RestClient.builder()
+				.baseUrl(GEOCODER_BASE_URL)
+				.defaultHeader("User-Agent", GEOCODER_USER_AGENT)
+				.build()
+		);
+	}
+
+	ListingLocationGeocodingService(RestClient restClient) {
+		this.restClient = restClient;
 	}
 
 	public ListingCoordinates resolveCoordinates(CreateListingLocationRequest request) {
