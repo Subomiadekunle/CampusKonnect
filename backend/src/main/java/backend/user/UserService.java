@@ -1,12 +1,8 @@
 package backend.user;
 
-<<<<<<< HEAD
-import java.util.List;
-=======
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,21 +28,11 @@ public class UserService {
 
 	public User updatePreferences(String email, List<String> preferences) {
 		User user = requireByEmail(email);
-<<<<<<< HEAD
-		user.setPreferences(preferences);
-=======
 		user.setPreferences(sanitizePreferences(preferences));
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 		return userRepository.save(user);
 	}
 
 	public User updateUniversity(String email, String university) {
-<<<<<<< HEAD
-		User user = requireByEmail(email);
-		user.setUniversity(university);
-		return userRepository.save(user);
-	}
-=======
 		String normalizedUniversity = normalizeUniversity(university);
 		User user = requireByEmail(email);
 		user.setUniversity(normalizedUniversity);
@@ -98,5 +84,4 @@ public class UserService {
 		}
 		return normalized;
 	}
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 }

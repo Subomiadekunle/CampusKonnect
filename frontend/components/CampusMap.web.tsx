@@ -1,10 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-<<<<<<< HEAD
-import { buildMapHtml, MapCoords, MapListing } from './GoogleMapView';
-=======
 import { buildMapHtml, MapCoords, MapListing } from './GoogleMapView.ts';
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 
@@ -15,12 +11,6 @@ type Props = {
   onSelectListing: (listing: MapListing | null) => void;
 };
 
-<<<<<<< HEAD
-export default function CampusMap({ campusCoords, listings }: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  const html = buildMapHtml(GOOGLE_MAPS_API_KEY, campusCoords, listings, '');
-=======
 export default function CampusMap({ campusCoords, listings, selectedListing, onSelectListing }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -57,7 +47,6 @@ export default function CampusMap({ campusCoords, listings, selectedListing, onS
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [listings, onSelectListing]);
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 
   return (
     <View style={styles.container}>
@@ -73,9 +62,6 @@ export default function CampusMap({ campusCoords, listings, selectedListing, onS
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
-  container: { flex: 1 },
-=======
   container: {
     flex: 1,
     borderTopWidth: 1,
@@ -83,5 +69,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#DFF1FB',
   },
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 });

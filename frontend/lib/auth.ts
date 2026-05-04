@@ -28,13 +28,8 @@ export type RegistrationResponse = {
 export type UserProfile = {
   name: string;
   email: string;
-<<<<<<< HEAD
-  preferences: string[];
-  university: string | null;
-=======
   preferences?: string[];
   university?: string | null;
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 };
 
 export type ServiceListing = {
@@ -86,9 +81,6 @@ export type ImproveListingDescriptionResponse = {
 
 const API_BASE_URL = 'http://localhost:8080';
 const AUTH_TOKEN_STORAGE_KEY = 'campuskonnect-auth-token';
-
-// Set to true to bypass the backend for local UI development
-const MOCK_MODE = true;
 
 let authToken: string | null = null;
 
@@ -157,16 +149,10 @@ async function getJson<TResponse>(path: string, fallbackError: string): Promise<
 
 // Keep auth requests in one place so screens can stay focused on UI and validation.
 export async function registerUser(body: RegisterRequest): Promise<RegistrationResponse> {
-  if (MOCK_MODE) return { message: 'Registration successful. Please verify your email.' };
   return postJson<RegistrationResponse>('/auth/register', body, 'Registration failed.');
 }
 
 export async function loginUser(body: LoginRequest): Promise<AuthResponse> {
-  if (MOCK_MODE) {
-    const token = 'mock-jwt-token';
-    await persistAuthToken(token);
-    return { token };
-  }
   return postJson<AuthResponse>('/auth/login', body, 'Login failed.');
 }
 
@@ -184,56 +170,10 @@ export async function clearAuthToken(): Promise<void> {
   storage?.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
-const MOCK_PREFERENCES_KEY = 'campuskonnect-mock-preferences';
-const MOCK_UNIVERSITY_KEY = 'campuskonnect-mock-university';
-const USER_LOCATION_KEY = 'campuskonnect-user-location';
-
-export function getUserLocation(): string {
-  return storage?.getItem(USER_LOCATION_KEY) ?? '';
-}
-
-export function saveUserLocation(location: string): void {
-  storage?.setItem(USER_LOCATION_KEY, location);
-}
-
 export async function getCurrentUser(): Promise<UserProfile> {
-  if (MOCK_MODE) {
-    const stored = storage?.getItem(MOCK_PREFERENCES_KEY);
-    const preferences: string[] = stored ? JSON.parse(stored) : [];
-    const university = storage?.getItem(MOCK_UNIVERSITY_KEY) ?? null;
-    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
-  }
   return getJson<UserProfile>('/api/users/me', 'Unable to load profile.');
 }
 
-<<<<<<< HEAD
-export async function saveUniversity(university: string): Promise<UserProfile> {
-  if (MOCK_MODE) {
-    storage?.setItem(MOCK_UNIVERSITY_KEY, university);
-    const stored = storage?.getItem(MOCK_PREFERENCES_KEY);
-    const preferences: string[] = stored ? JSON.parse(stored) : [];
-    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
-  }
-  try {
-    const response = await axios.put(`${API_BASE_URL}/api/users/university`, { university });
-    return response.data as UserProfile;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      throw new Error(err.response?.data?.message || err.response?.data?.error || 'Unable to save university.');
-    }
-    throw new Error('Unable to save university.');
-  }
-}
-
-export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
-  if (MOCK_MODE) {
-    storage?.setItem(MOCK_PREFERENCES_KEY, JSON.stringify(preferences));
-    const university = storage?.getItem(MOCK_UNIVERSITY_KEY) ?? null;
-    return { name: 'Test User', email: 'test@slu.edu', preferences, university };
-  }
-  try {
-    const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences);
-=======
 export async function saveUserPreferences(preferences: string[]): Promise<UserProfile> {
   try {
     const response = await axios.put(`${API_BASE_URL}/api/users/preferences`, preferences, {
@@ -241,28 +181,21 @@ export async function saveUserPreferences(preferences: string[]): Promise<UserPr
         'Content-Type': 'application/json',
       },
     });
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
     return response.data as UserProfile;
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const errorMessage =
-<<<<<<< HEAD
-        err.response?.data?.message || err.response?.data?.error || 'Unable to save preferences.';
-=======
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.response?.data?.detail ||
         err.response?.data?.title ||
         'Unable to save preferences.';
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
       throw new Error(errorMessage);
     }
     throw new Error('Unable to save preferences.');
   }
 }
 
-<<<<<<< HEAD
-=======
 export async function saveUniversity(university: string): Promise<UserProfile> {
   try {
     const response = await axios.put(
@@ -289,13 +222,7 @@ export async function saveUniversity(university: string): Promise<UserProfile> {
   }
 }
 
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 export async function verifyEmail(body: VerifyEmailRequest): Promise<AuthResponse> {
-  if (MOCK_MODE) {
-    const token = 'mock-jwt-token';
-    await persistAuthToken(token);
-    return { token };
-  }
   const params = new URLSearchParams({
     email: body.email.trim().toLowerCase(),
     code: body.code.trim(),
@@ -370,7 +297,6 @@ export async function createServiceListing(
 }
 
 export async function getAllServiceListings(): Promise<ServiceListing[]> {
-  if (MOCK_MODE) return [];
   return getJson<ServiceListing[]>('/api/listings', 'Unable to load listings.');
 }
 
@@ -386,7 +312,6 @@ export function resolveApiAssetUrl(path: string): string {
 }
 
 export async function getMyServiceListings(): Promise<ServiceListing[]> {
-  if (MOCK_MODE) return [];
   return getJson<ServiceListing[]>('/api/listings/mine', 'Unable to load your listings.');
 }
 

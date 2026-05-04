@@ -14,16 +14,14 @@ export default function TabLayout() {
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   useEffect(() => {
-    const unauthRoutes = new Set(['/login', '/signup', '/verify']);
-    const onboardingRoutes = new Set(['/preferences']);
+    const authRoutes = new Set(['/login', '/signup', '/verify']);
 
     async function guardProtectedRoutes() {
       let token = await getAuthToken();
-      const isOnUnauthRoute = unauthRoutes.has(pathname);
-      const isOnOnboardingRoute = onboardingRoutes.has(pathname);
+      const isOnAuthRoute = authRoutes.has(pathname);
 
       // If a token exists, confirm it still works (not expired/invalid).
-      if (token && !isOnUnauthRoute && !isOnOnboardingRoute) {
+      if (token && !isOnAuthRoute) {
         try {
           await getCurrentUser();
         } catch {
@@ -32,11 +30,11 @@ export default function TabLayout() {
         }
       }
 
-      if (!token && !isOnUnauthRoute) {
+      if (!token && !isOnAuthRoute) {
         router.replace('/login');
       }
 
-      if (token && isOnUnauthRoute) {
+      if (token && isOnAuthRoute) {
         router.replace('/');
       }
 

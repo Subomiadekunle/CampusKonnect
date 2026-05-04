@@ -57,11 +57,7 @@ export default function AccountScreen() {
       setProfile(updated);
       closeUniversityModal();
     } catch {
-<<<<<<< HEAD
-      // silently fail — user can retry
-=======
       // User can retry from modal.
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
     } finally {
       setIsSaving(false);
     }
@@ -73,16 +69,12 @@ export default function AccountScreen() {
   };
 
   const initials = profile?.name
-<<<<<<< HEAD
-    ? profile.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-=======
     ? profile.name
         .split(' ')
         .map((w) => w[0])
         .join('')
         .toUpperCase()
         .slice(0, 2)
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
     : '?';
 
   const username = profile?.email ? profile.email.split('@')[0] : '';
@@ -107,29 +99,15 @@ export default function AccountScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-<<<<<<< HEAD
-
-        {/* Profile header */}
-=======
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
         <View style={styles.profileHeader}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <Text style={styles.displayName}>{profile?.name}</Text>
           <Text style={styles.usernameText}>@{username}</Text>
-<<<<<<< HEAD
-          {profile?.university ? (
-            <Text style={styles.universityBadge}>{profile.university}</Text>
-          ) : null}
-        </View>
-
-        {/* Account info card */}
-=======
           {profile?.university ? <Text style={styles.universityBadge}>{profile.university}</Text> : null}
         </View>
 
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Account Info</Text>
           <View style={styles.infoRow}>
@@ -148,10 +126,6 @@ export default function AccountScreen() {
           </View>
         </View>
 
-<<<<<<< HEAD
-        {/* University card */}
-=======
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
         <View style={styles.card}>
           <View style={styles.sectionTitleRow}>
             <Text style={styles.sectionTitle}>University</Text>
@@ -168,10 +142,6 @@ export default function AccountScreen() {
           )}
         </View>
 
-<<<<<<< HEAD
-        {/* Interests card */}
-=======
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
         <View style={styles.card}>
           <View style={styles.sectionTitleRow}>
             <Text style={styles.sectionTitle}>My Interests</Text>
@@ -194,19 +164,11 @@ export default function AccountScreen() {
           )}
         </View>
 
-<<<<<<< HEAD
-        {/* Logout */}
-=======
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
 
-<<<<<<< HEAD
-      {/* University modal */}
-=======
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
       <Modal visible={universityModalVisible} transparent animationType="none" onRequestClose={closeUniversityModal}>
         <Pressable style={styles.modalOverlay} onPress={closeUniversityModal}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalKAV}>
@@ -231,18 +193,9 @@ export default function AccountScreen() {
                 <TouchableOpacity
                   style={[styles.saveButton, (!universityInput.trim() || isSaving) && styles.saveButtonDisabled]}
                   onPress={handleSaveUniversity}
-<<<<<<< HEAD
-                  disabled={!universityInput.trim() || isSaving}>
-                  {isSaving ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.saveButtonText}>Save University</Text>
-                  )}
-=======
                   disabled={!universityInput.trim() || isSaving}
                 >
                   {isSaving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Save University</Text>}
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
                 </TouchableOpacity>
               </Pressable>
             </Animated.View>

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import { StyleSheet } from 'react-native';
-import WebView from 'react-native-webview';
-=======
 import { StyleSheet, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 import { buildMapHtml, MapCoords, MapListing } from './GoogleMapView';
 
 const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? '';
@@ -16,20 +11,6 @@ type Props = {
   onSelectListing: (listing: MapListing | null) => void;
 };
 
-<<<<<<< HEAD
-export default function CampusMap({ campusCoords, listings }: Props) {
-  const html = buildMapHtml(GOOGLE_MAPS_API_KEY, campusCoords, listings, '');
-
-  return (
-    <WebView
-      style={styles.map}
-      source={{ html }}
-      originWhitelist={['*']}
-      javaScriptEnabled
-      domStorageEnabled
-      allowsInlineMediaPlayback
-    />
-=======
 export default function CampusMap({ campusCoords, listings, selectedListing, onSelectListing }: Props) {
   const html = buildMapHtml(
     GOOGLE_MAPS_API_KEY,
@@ -65,14 +46,10 @@ export default function CampusMap({ campusCoords, listings, selectedListing, onS
         onMessage={handleMessage}
       />
     </View>
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
   );
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
-  map: { flex: 1 },
-=======
   container: {
     flex: 1,
     borderTopWidth: 1,
@@ -81,5 +58,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#DFF1FB',
   },
   webview: { flex: 1, backgroundColor: 'transparent' },
->>>>>>> fda74ba070091679cd9d10c2bc5f3f94a72855f0
 });
