@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,9 @@ class ServiceListingServiceTest {
 	@Mock
 	private AiDescriptionService aiDescriptionService;
 
+	@Mock
+	private ListingLocationGeocodingService listingLocationGeocodingService;
+
 	@InjectMocks
 	private ServiceListingService serviceListingService;
 
@@ -49,14 +53,26 @@ class ServiceListingServiceTest {
 		"  75  ",
 		"  Per Hour  ",
 		"  Mon/Wed 4pm-7pm  ",
-		"  Pius Library  "
+		"  Pius Library  ",
+		null,
+		null
 	);
 
 	@Test
 	void createListingSavesTrimmedValues() {
 		User owner = new User("Ramedan Ahmed", "rahmed16@slu.edu");
+		owner.setUniversity("Saint Louis University");
 
 		when(userService.requireByEmail("rahmed16@slu.edu")).thenReturn(owner);
+		when(listingLocationGeocodingService.fromUserAndRequest(owner, "  Pius Library  ", null, null))
+			.thenReturn(new ListingLocationGeocodingService.CreateListingLocationRequest(
+				"  Pius Library  ",
+				"Saint Louis University",
+				null,
+				null
+			));
+		when(listingLocationGeocodingService.resolveCoordinates(any()))
+			.thenReturn(new ListingLocationGeocodingService.ListingCoordinates(38.6359, -90.2344));
 		when(listingImageStorageService.storeImages(any())).thenReturn(List.of());
 		when(serviceListingRepository.save(any(ServiceListing.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -69,6 +85,8 @@ class ServiceListingServiceTest {
 		assertEquals("Per Hour", result.priceType());
 		assertEquals("Mon/Wed 4pm-7pm", result.availability());
 		assertEquals("Pius Library", result.serviceArea());
+		assertEquals(38.6359, result.latitude());
+		assertEquals(-90.2344, result.longitude());
 		verify(serviceListingRepository).save(any(ServiceListing.class));
 		verify(listingImageStorageService).storeImages(eq(List.of()));
 	}
@@ -76,10 +94,20 @@ class ServiceListingServiceTest {
 	@Test
 	void createListingWithImagesUsesStoredUrls() {
 		User owner = new User("Ramedan Ahmed", "rahmed16@slu.edu");
+		owner.setUniversity("Saint Louis University");
 		MockMultipartFile img = new MockMultipartFile("images", "a.jpg", "image/jpeg", new byte[] {1, 2, 3});
 		List<String> imageUrls = List.of("/uploads/listings/a.jpg");
 
 		when(userService.requireByEmail("rahmed16@slu.edu")).thenReturn(owner);
+		when(listingLocationGeocodingService.fromUserAndRequest(owner, "  Pius Library  ", null, null))
+			.thenReturn(new ListingLocationGeocodingService.CreateListingLocationRequest(
+				"  Pius Library  ",
+				"Saint Louis University",
+				null,
+				null
+			));
+		when(listingLocationGeocodingService.resolveCoordinates(any()))
+			.thenReturn(new ListingLocationGeocodingService.ListingCoordinates(38.6359, -90.2344));
 		when(listingImageStorageService.storeImages(any())).thenReturn(imageUrls);
 		when(serviceListingRepository.save(any(ServiceListing.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -95,7 +123,7 @@ class ServiceListingServiceTest {
 
 	@Test
 	void createListingRejectsMissingFields() {
-		CreateServiceListingRequest request = new CreateServiceListingRequest("  ", "Tutoring", "desc", "20", "Per Hour", "Mon", "Pius");
+		CreateServiceListingRequest request = new CreateServiceListingRequest("  ", "Tutoring", "desc", "20", "Per Hour", "Mon", "Pius", null, null);
 
 		ResponseStatusException error = assertThrows(
 			ResponseStatusException.class,
@@ -118,7 +146,9 @@ class ServiceListingServiceTest {
 			"abc",
 			"Per Hour",
 			"Mon",
-			"Pius"
+			"Pius",
+			null,
+			null
 		);
 
 		ResponseStatusException error = assertThrows(
@@ -139,7 +169,9 @@ class ServiceListingServiceTest {
 			"-1",
 			"Per Hour",
 			"Mon",
-			"Pius"
+			"Pius",
+			null,
+			null
 		);
 
 		ResponseStatusException error = assertThrows(
@@ -149,6 +181,38 @@ class ServiceListingServiceTest {
 
 		assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
 		assertEquals("price must be zero or greater", error.getReason());
+	}
+
+	@Test
+	void createListingRejectsUnresolvableMapLocation() {
+		User owner = new User("Ramedan Ahmed", "rahmed16@slu.edu");
+		owner.setUniversity("Saint Louis University");
+
+		when(userService.requireByEmail("rahmed16@slu.edu")).thenReturn(owner);
+		when(listingLocationGeocodingService.fromUserAndRequest(owner, "  Pius Library  ", null, null))
+			.thenReturn(new ListingLocationGeocodingService.CreateListingLocationRequest(
+				"  Pius Library  ",
+				"Saint Louis University",
+				null,
+				null
+			));
+		when(listingLocationGeocodingService.resolveCoordinates(any()))
+			.thenThrow(new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Unable to determine a map location for that service area. Try a more specific location."
+			));
+
+		ResponseStatusException error = assertThrows(
+			ResponseStatusException.class,
+			() -> serviceListingService.createListing("rahmed16@slu.edu", VALID_REQUEST)
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+		assertEquals(
+			"Unable to determine a map location for that service area. Try a more specific location.",
+			error.getReason()
+		);
+		verify(serviceListingRepository, never()).save(any(ServiceListing.class));
 	}
 
 	@Test
@@ -162,7 +226,9 @@ class ServiceListingServiceTest {
 			new BigDecimal("25"),
 			"Per Hour",
 			"Mon 4-7",
-			"Pius"
+			"Pius",
+			38.6359,
+			-90.2344
 		);
 
 		when(serviceListingRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(listing));
@@ -173,6 +239,8 @@ class ServiceListingServiceTest {
 		assertEquals("Calc tutoring", result.getFirst().serviceTitle());
 		assertEquals("25", result.getFirst().price());
 		assertEquals("Pius", result.getFirst().serviceArea());
+		assertEquals(38.6359, result.getFirst().latitude());
+		assertEquals(-90.2344, result.getFirst().longitude());
 		assertEquals("Mon 4-7", result.getFirst().availability());
 	}
 
@@ -187,7 +255,9 @@ class ServiceListingServiceTest {
 			new BigDecimal("30"),
 			"Per Hour",
 			"Tue 2-4",
-			"Ritter"
+			"Ritter",
+			38.6360,
+			-90.2330
 		);
 
 		when(serviceListingRepository.findAllByOwnerIdOrderByCreatedAtDesc(7L)).thenReturn(List.of(listing));

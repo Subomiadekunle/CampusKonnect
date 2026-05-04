@@ -14,6 +14,8 @@ public record ServiceListingResponse(
 	String priceType,
 	String availability,
 	String serviceArea,
+	Double latitude,
+	Double longitude,
 	List<String> imageUrls,
 	Instant createdAt,
 	Instant updatedAt
@@ -29,6 +31,8 @@ public record ServiceListingResponse(
 			listing.getPriceType(),
 			listing.getAvailability(),
 			listing.getServiceArea(),
+			listing.getLatitude(),
+			listing.getLongitude(),
 			listing.getImageUrls(),
 			listing.getCreatedAt(),
 			listing.getUpdatedAt()

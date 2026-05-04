@@ -7,6 +7,8 @@ public record CreateServiceListingRequest(
 	String price,
 	String priceType,
 	String availability,
-	String serviceArea
+	String serviceArea,
+	Double latitude,
+	Double longitude
 ) {
 }

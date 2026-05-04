@@ -21,17 +21,20 @@ public class ServiceListingService {
 	private final UserService userService;
 	private final ListingImageStorageService listingImageStorageService;
 	private final AiDescriptionService aiDescriptionService;
+	private final ListingLocationGeocodingService listingLocationGeocodingService;
 
 	public ServiceListingService(
 		ServiceListingRepository serviceListingRepository,
 		UserService userService,
 		ListingImageStorageService listingImageStorageService,
-		AiDescriptionService aiDescriptionService
+		AiDescriptionService aiDescriptionService,
+		ListingLocationGeocodingService listingLocationGeocodingService
 	) {
 		this.serviceListingRepository = serviceListingRepository;
 		this.userService = userService;
 		this.listingImageStorageService = listingImageStorageService;
 		this.aiDescriptionService = aiDescriptionService;
+		this.listingLocationGeocodingService = listingLocationGeocodingService;
 	}
 
 	@Transactional
@@ -48,6 +51,14 @@ public class ServiceListingService {
 		validateCreateRequest(request);
 
 		User owner = userService.requireByEmail(ownerEmail);
+		ListingLocationGeocodingService.ListingCoordinates coordinates = listingLocationGeocodingService.resolveCoordinates(
+			listingLocationGeocodingService.fromUserAndRequest(
+				owner,
+				request.serviceArea(),
+				request.latitude(),
+				request.longitude()
+			)
+		);
 		ServiceListing listing = new ServiceListing(
 			owner,
 			request.serviceTitle().trim(),
@@ -56,7 +67,9 @@ public class ServiceListingService {
 			parsePrice(request.price()),
 			request.priceType().trim(),
 			request.availability().trim(),
-			request.serviceArea().trim()
+			request.serviceArea().trim(),
+			coordinates.latitude(),
+			coordinates.longitude()
 		);
 		listing.setImageUrls(listingImageStorageService.storeImages(images));
 		ServiceListing saved = serviceListingRepository.save(listing);
