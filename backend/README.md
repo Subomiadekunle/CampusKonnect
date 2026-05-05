@@ -16,9 +16,9 @@ Create a database named `campuskonnect` in PostgreSQL.
 Then create a `.env` file in the project root with your database connection:
 
 ```bash
-DB_URL=jdbc:postgresql://localhost:5433/campuskonnect
-DB_USERNAME=campuskonnect
-DB_PASSWORD=campuskonnect
+SUPABASE_DB_URL=jdbc:postgresql://aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+SUPABASE_DB_USERNAME=postgres.tflsjdlyjnbgxeldaksl
+SUPABASE_DB_PASSWORD=your_supabase_password
 ```
 
 If your PostgreSQL uses a different port, username, or password, just change those values.

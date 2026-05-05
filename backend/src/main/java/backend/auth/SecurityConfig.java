@@ -36,14 +36,15 @@ public class SecurityConfig {
 				.requestMatchers("/auth/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/listings").permitAll()
 				.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-				.anyRequest().authenticated())
+				.requestMatchers("/api/**").authenticated()
+				.anyRequest().permitAll())
 			.build();
 	}
 
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("http://localhost:8081"));
+		configuration.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:8081"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 

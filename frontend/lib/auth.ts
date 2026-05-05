@@ -79,7 +79,9 @@ export type ImproveListingDescriptionResponse = {
   improvedDescription: string;
 };
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
+  (Platform.OS === 'web' ? '' : 'http://localhost:8080');
 const AUTH_TOKEN_STORAGE_KEY = 'campuskonnect-auth-token';
 
 let authToken: string | null = null;

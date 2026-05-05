@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        EXPO_PUBLIC_API_BASE_URL: ""
+        EXPO_PUBLIC_GOOGLE_MAPS_KEY: ${EXPO_PUBLIC_GOOGLE_MAPS_KEY:-}
+    image: campuskonnect-fullstack:local
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      FRONTEND_STATIC_DIR: /app/frontend-dist
+      SUPABASE_DB_URL: ${SUPABASE_DB_URL}
+      SUPABASE_DB_USERNAME: ${SUPABASE_DB_USERNAME}
+      SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-campuskonnect-demo-jwt-secret-key-change-me-2026}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-noreply@campuskonnect.local}
+    depends_on:
+      redis:
+        condition: service_started
+    volumes:
+      - app_uploads:/app/uploads
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  app_uploads:
+  redis_data:
