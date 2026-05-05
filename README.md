@@ -107,7 +107,7 @@ docker run --rm -p 8080:8080 \
 
 ### Notes
 
-- `docker compose up --build` is the easiest way for instructors or teammates to run the project locally once the Supabase credentials are in `.env`.
+- `docker compose up --build` is the easiest way run the project locally once the Supabase credentials are in `.env`.
 - The standalone image expects the cloud PostgreSQL database and Redis to be reachable from the container.
 - Use the Supabase shared pooler host shown above for local Docker/IPv4 environments.
 - Uploaded listing images are stored under `/app/uploads/listings` inside the container.
