@@ -46,4 +46,5 @@ public class VerificationService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email must be a SLU email address");
 		}
 	}
+	
 }
